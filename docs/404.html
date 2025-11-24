@@ -8,6 +8,8 @@
         if (window.location.hostname !== newHostname) {
             var url = new URL(window.location.href);
             url.hostname = newHostname;
+            url.protocol = "https:";
+            url.pathname = url.pathname.replace(/modellen\.netbeheernederland\.nl\/?/g, "");
             window.location.replace(url.href);
         }
     </script>
