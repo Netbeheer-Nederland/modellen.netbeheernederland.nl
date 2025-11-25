@@ -4,47 +4,46 @@
     <meta charset="UTF-8">
     <title>Redirecting...</title>
     <script>
-        // CONFIG
         var newHostname = "netbeheer-nederland.github.io";
-        var paramName = "cache_bypass";
-
+        
         if (window.location.hostname !== newHostname) {
             
             var storageKey = 'redirect_attempts_' + newHostname;
             
-            // Haal huidig aantal pogingen op (standaard 0)
+            // Haal het aantal pogingen op (standaard 0 als het niet bestaat)
             var attempts = parseInt(sessionStorage.getItem(storageKey) || "0");
             
             var url = new URL(window.location.href);
             url.hostname = newHostname;
             url.protocol = "https:";
 
-            // --- PHASE 1: First Attempt (Clean URL) ---
+            // --- FASE 1: Eerste poging (Clean redirect) ---
             if (attempts === 0) {
-                // We markeren poging 1 en sturen door zonder parameters
+                // Zet teller op 1 en probeer het
                 sessionStorage.setItem(storageKey, "1");
                 window.location.replace(url.href);
             } 
             
-            // --- PHASE 2: Second Attempt (With Cache Buster) ---
+            // --- FASE 2: Tweede poging (Cache Buster) ---
             else if (attempts === 1) {
-                // We zijn teruggekomen na poging 1. 
+                // We zijn teruggekomen na poging 1. Blijkbaar zat er een loop of cache probleem.
+                // Zet teller op 2.
                 sessionStorage.setItem(storageKey, "2");
                 
-                // Voeg de bypass parameter toe met huidige tijdstempel
-                url.searchParams.set(paramName, Date.now());
+                // Voeg de cache buster toe
+                url.searchParams.set('cb', Date.now());
                 
-                console.warn("First redirect attempt failed due to potential loop. Retrying with cache bypass parameter...");
+                console.warn("Eerste redirect mislukt, poging met cache-buster...");
                 window.location.replace(url.href);
             }
             
-            // --- PHASE 3: Surrender (Show Error Message) ---
+            // --- FASE 3: Opgeven (Foutmelding tonen) ---
             else {
-                // We zijn teruggekomen na poging 2. Zelfs de bypass werkte niet (of we werden teruggestuurd).
-                console.error("Persistent redirect loop detected. Automatic redirection stopped.");
+                // We zijn teruggekomen na poging 2. Zelfs de cache buster werkte niet (of de server stuurt terug).
+                console.error("Redirect loop gedetecteerd. Script stopt.");
                 
-                // Voor de handmatige link genereren we een verse timestamp
-                url.searchParams.set(paramName, Date.now());
+                // Voor de zekerheid maken we voor de link NOG een nieuwe timestamp
+                url.searchParams.set('cb', Date.now());
 
                 window.onload = function() {
                     document.body.innerHTML = 
