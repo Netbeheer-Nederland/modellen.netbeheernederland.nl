@@ -35,8 +35,8 @@
                 url.hostname = newHostname;
                 url.protocol = "https:";
                 
-                // Optioneel: Cache buster toevoegen om de oude 301 cache te omzeilen
-                // url.searchParams.set('v', now); 
+                // Cache buster toevoegen om de oude 301 cache te omzeilen
+                url.searchParams.set('cb', now);
 
                 window.location.replace(url.href);
             } else {
