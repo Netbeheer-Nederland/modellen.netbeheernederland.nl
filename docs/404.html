@@ -2,61 +2,61 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Doorverwijzen...</title>
+    <title>Redirecting...</title>
     <script>
+        // CONFIG
         var newHostname = "netbeheer-nederland.github.io";
-        
-        // Check of we op de verkeerde host zitten
+        var paramName = "cache_bypass";
+
         if (window.location.hostname !== newHostname) {
-            var shouldRedirect = true;
-            var now = Date.now();
             
-            // Probeer loop detectie via sessionStorage
-            try {
-                var lastRedirect = sessionStorage.getItem('redirect_timestamp');
-                
-                // Als er in de afgelopen 1 seconde (1000ms) al een redirect is geweest
-                if (lastRedirect && (now - parseInt(lastRedirect)) < 1000) {
-                    shouldRedirect = false;
-                    console.warn("Redirect loop gedetecteerd. Automatische redirect gestopt.");
-                }
-            } catch (e) {
-                // Als sessionStorage niet werkt (bv. privacy instellingen), doen we niets bijzonders
-                console.error(e);
-            }
+            var storageKey = 'redirect_attempts_' + newHostname;
+            
+            // Haal huidig aantal pogingen op (standaard 0)
+            var attempts = parseInt(sessionStorage.getItem(storageKey) || "0");
+            
+            var url = new URL(window.location.href);
+            url.hostname = newHostname;
+            url.protocol = "https:";
 
-            if (shouldRedirect) {
-                // Sla het huidige tijdstip op voordat we redirecten
-                try {
-                    sessionStorage.setItem('redirect_timestamp', now);
-                } catch (e) {}
-
-                var url = new URL(window.location.href);
-                url.hostname = newHostname;
-                url.protocol = "https:";
-                
-                // Cache buster toevoegen om de oude 301 cache te omzeilen
-                url.searchParams.set('cb', now);
-
+            // --- PHASE 1: First Attempt (Clean URL) ---
+            if (attempts === 0) {
+                // We markeren poging 1 en sturen door zonder parameters
+                sessionStorage.setItem(storageKey, "1");
                 window.location.replace(url.href);
-            } else {
-                // Als we in een loop zitten, tonen we de link handmatig (wordt in de body afgehandeld)
+            } 
+            
+            // --- PHASE 2: Second Attempt (With Cache Buster) ---
+            else if (attempts === 1) {
+                // We zijn teruggekomen na poging 1. 
+                sessionStorage.setItem(storageKey, "2");
+                
+                // Voeg de bypass parameter toe met huidige tijdstempel
+                url.searchParams.set(paramName, Date.now());
+                
+                console.warn("First redirect attempt failed due to potential loop. Retrying with cache bypass parameter...");
+                window.location.replace(url.href);
+            }
+            
+            // --- PHASE 3: Surrender (Show Error Message) ---
+            else {
+                // We zijn teruggekomen na poging 2. Zelfs de bypass werkte niet (of we werden teruggestuurd).
+                console.error("Persistent redirect loop detected. Automatic redirection stopped.");
+                
+                // Voor de handmatige link genereren we een verse timestamp
+                url.searchParams.set(paramName, Date.now());
+
                 window.onload = function() {
                     document.body.innerHTML = 
                         '<div style="font-family: sans-serif; max-width: 600px; margin: 2rem auto; line-height: 1.6;">' +
                         '<h1>Automatic Redirection Interrupted</h1>' +
-                        
                         '<p>Your browser is retaining outdated cache information, which is causing a redirection loop.</p>' +
-                        
-                        '<p><strong><a href="https://' + newHostname + window.location.pathname + window.location.search + '">Click here to proceed to the new website manually &rarr;</a></strong></p>' +
-                        
+                        '<p><strong><a href="' + url.href + '">Click here to force a reload to the new website &rarr;</a></strong></p>' +
                         '<hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">' +
-                        
-                        '<p style="font-size: 0.9em; color: #555;">To resolve this issue permanently:</p>' +
-                        
+                        '<p style="font-size: 0.9em; color: #555;">To resolve this issue permanently for the original link:</p>' +
                         '<ul style="font-size: 0.9em; color: #555;">' +
                             '<li><strong>Chrome Users:</strong> Copy and paste <code>chrome://settings/clearBrowserData</code> into your address bar and clear "Cached images and files".</li>' +
-                            '<li><strong>Alternative:</strong> Open this page in Incognito Mode (Private Browsing) or use a different web browser.</li>' +
+                            '<li><strong>Alternative:</strong> Open the site in Incognito Mode (Private Browsing).</li>' +
                         '</ul>' +
                         '</div>';
                 };
@@ -65,6 +65,6 @@
     </script>
 </head>
 <body>
-    <p>Een moment, u wordt doorverwezen...</p>
+    <p>Redirecting...</p>
 </body>
 </html>
