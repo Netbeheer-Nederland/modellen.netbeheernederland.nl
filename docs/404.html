@@ -42,11 +42,23 @@
             } else {
                 // Als we in een loop zitten, tonen we de link handmatig (wordt in de body afgehandeld)
                 window.onload = function() {
-                    document.body.innerHTML = '<h1>Er ging iets mis met doorverwijzen.</h1>' +
-                        '<p>Je browser heeft oude instellingen onthouden.</p>' +
-                        '<p>Gebruik je de Chrome-browser ga dan naar <a href="chrome://settings/clearBrowserData">chrome://settings/clearBrowserData</a> om gecachete afbeeldingen en bestanden te verwijderen.</p>' +
-                        '<p>Andere opties zijn om in de incognito-modus te gaan of tijdelijk een andere browser te gebruiken.</p>' +
-                        '<p><a href="https://' + newHostname + window.location.pathname + window.location.search + '">Klik hier om naar de nieuwe site te gaan</a>.</p>';
+                    document.body.innerHTML = 
+                        '<div style="font-family: sans-serif; max-width: 600px; margin: 2rem auto; line-height: 1.6;">' +
+                        '<h1>Automatic Redirection Interrupted</h1>' +
+                        
+                        '<p>Your browser is retaining outdated cache information, which is causing a redirection loop.</p>' +
+                        
+                        '<p><strong><a href="https://' + newHostname + window.location.pathname + window.location.search + '">Click here to proceed to the new website manually &rarr;</a></strong></p>' +
+                        
+                        '<hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">' +
+                        
+                        '<p style="font-size: 0.9em; color: #555;">To resolve this issue permanently:</p>' +
+                        
+                        '<ul style="font-size: 0.9em; color: #555;">' +
+                            '<li><strong>Chrome Users:</strong> Copy and paste <code>chrome://settings/clearBrowserData</code> into your address bar and clear "Cached images and files".</li>' +
+                            '<li><strong>Alternative:</strong> Open this page in Incognito Mode (Private Browsing) or use a different web browser.</li>' +
+                        '</ul>' +
+                        '</div>';
                 };
             }
         }
