@@ -4,46 +4,62 @@
     <meta charset="UTF-8">
     <title>Redirecting...</title>
     <script>
+        // CONFIGURATION
         var newHostname = "netbeheer-nederland.github.io";
-        
+        var paramName = "cache_bypass";
+        var loopTimeLimit = 1000; // Reset attempts if more than 1000ms passed
+
         if (window.location.hostname !== newHostname) {
             
-            var storageKey = 'redirect_attempts_' + newHostname;
+            var now = Date.now();
+            var storageKeyCount = 'redirect_count_' + newHostname;
+            var storageKeyTime = 'redirect_time_' + newHostname;
             
-            // Haal het aantal pogingen op (standaard 0 als het niet bestaat)
-            var attempts = parseInt(sessionStorage.getItem(storageKey) || "0");
+            // Retrieve stored data
+            var attempts = parseInt(sessionStorage.getItem(storageKeyCount) || "0");
+            var lastAttemptTime = parseInt(sessionStorage.getItem(storageKeyTime) || "0");
             
+            // TIMEOUT CHECK:
+            // If the last attempt was more than 1 second ago, we assume it's a fresh visit
+            // (or user clicked 'back' after reading the page). Reset counter.
+            if ((now - lastAttemptTime) > loopTimeLimit) {
+                attempts = 0;
+            }
+
             var url = new URL(window.location.href);
             url.hostname = newHostname;
             url.protocol = "https:";
 
-            // --- FASE 1: Eerste poging (Clean redirect) ---
+            // --- PHASE 1: First Attempt (Clean URL) ---
             if (attempts === 0) {
-                // Zet teller op 1 en probeer het
-                sessionStorage.setItem(storageKey, "1");
+                // Store current time and increment counter to 1
+                sessionStorage.setItem(storageKeyTime, now);
+                sessionStorage.setItem(storageKeyCount, "1");
+                
                 window.location.replace(url.href);
             } 
             
-            // --- FASE 2: Tweede poging (Cache Buster) ---
+            // --- PHASE 2: Second Attempt (With Cache Buster) ---
+            // We only get here if the user bounced back within 1000ms
             else if (attempts === 1) {
-                // We zijn teruggekomen na poging 1. Blijkbaar zat er een loop of cache probleem.
-                // Zet teller op 2.
-                sessionStorage.setItem(storageKey, "2");
+                // Store current time and increment counter to 2
+                sessionStorage.setItem(storageKeyTime, now);
+                sessionStorage.setItem(storageKeyCount, "2");
                 
-                // Voeg de cache buster toe
-                url.searchParams.set('cb', Date.now());
+                // Add bypass parameter
+                url.searchParams.set(paramName, now);
                 
-                console.warn("Eerste redirect mislukt, poging met cache-buster...");
+                console.warn("Rapid redirect loop detected (<" + loopTimeLimit + "ms). Retrying with cache bypass parameter...");
                 window.location.replace(url.href);
             }
             
-            // --- FASE 3: Opgeven (Foutmelding tonen) ---
+            // --- PHASE 3: Surrender (Show Error Message) ---
+            // We get here if the user bounced back AGAIN within 1000ms after phase 2
             else {
-                // We zijn teruggekomen na poging 2. Zelfs de cache buster werkte niet (of de server stuurt terug).
-                console.error("Redirect loop gedetecteerd. Script stopt.");
+                console.error("Persistent redirect loop detected. Automatic redirection stopped.");
                 
-                // Voor de zekerheid maken we voor de link NOG een nieuwe timestamp
-                url.searchParams.set('cb', Date.now());
+                // Generate fresh timestamp for the manual link
+                url.searchParams.set(paramName, now);
 
                 window.onload = function() {
                     document.body.innerHTML = 
